@@ -90,4 +90,4 @@ Theorem bs_correto: forall l, Sorted le (bs l) /\ Permutation l (bs l).
 Proof.
 Admitted.  
 
-(** Repositório: %\url{https://github.com/RafaBonach/bubble-sort-lc1.gits}% *)
+(** Repositório: %\url{https://github.com/RafaBonach/bubble-sort-lc1.git}% *)
