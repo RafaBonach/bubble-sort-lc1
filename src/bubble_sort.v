@@ -106,7 +106,7 @@ Theorem perm_eq: forall (l1 l2: list nat), (forall x, count_occ Nat.eq_dec l1 x 
 Proof.
   Admitted.
 
-(** ** Lemas e Provas de ordenação *)
+(** ** Provando permutação *)
 (** Com algumas definições estabelecidas, podemos começar a provar a corretude do algoritmo de ordenação por borbulhamento [bs].*)
 
 (** *** Lema 1: Permutação da lista ordenada -> Lista original*)
@@ -142,7 +142,38 @@ Assim, obteremos Perm (y :: bubble (x :: l0)) -> (y :: x :: l0) possibilitando q
 Finalmente, basta aplicar [perm_swap] no sequente Perm (y :: x :: l0) -> (x :: y :: l0) que a prova é finalizada. *)
 
 
+(** *** Lema 2: *)
+(** Agora, vamos provar que a função recursiva [bs] retorna uma permutação da lista original através do seguinte lema: *)
+
+Lemma bs_permuta: forall l, Perm (bs l) l.
+Proof.
+  induction l as [ | h tl].
+  - simpl. apply perm_refl.
+  - simpl. apply perm_trans with (h::(bs tl)).
+    + simpl. apply perm_bs.
+    + simpl. apply perm_const. apply IHtl.
+Qed.
+
+(** Para realizar essa prova, estabelecemos que uma lista l é estruturada por uma cabeça h e um corpo tl.
+A partir daí, provamos trivialmente que para uma função vazia, o [bs] retorna uma permutação de uma lista vazia.
+
+Em seguida, precisamos provar que a função [bs] retorna uma permutação da lista original, ou seja, Perm (bubble (h :: bs tl)) |- (h :: tl).
+
+Para isso, usamos a regra [perm_trans] com a lista (h :: (bs tl)). Isso divide a nossa prova em duas partes:
+- 1º Perm (bubble (h :: bs tl)) |- (h :: (bs tl)) que é provado pelo lema 1, ou seja, [perm_bs].
+- 2º Perm (h :: (bs tl)) |- (h :: tl): Para provar essa ramificação, precisamos:
+  - utilizar a regra [perm_const] para retira a constante h da lista, já que ela já está na posição que deveria estar;
+  - aplicamos a hipótese de indução [IHtl] provando assim que a lista tl é uma permutação da lista bs tl.
+*)
+
+(** ** Provando Ordenação *)
+(** Agora que provamos que o algoritmo bubblesort consegue retornar uma permutação da lista original,
+precisamos provar o algoritmo é capaz de ordenar a lista. *)
+
 (* begin hide *)
+
+(*
+
 Lemma bubble_sorted: forall l, Sorted le l -> bubble l = l.
 Proof. Admitted.
 
@@ -155,16 +186,14 @@ Lemma bubble_perm: forall l, Permutation l (bubble l).
 Proof.
   intro l. functional induction (bubble l). Admitted.
 
-(** O lema [bs_correto] a seguir, nos mostra que o algoritmo [bs] gera uma permutação da lista de entrada: *)
-
-Lemma bs_permuta: forall l, Permutation l (bs l).
-Proof. Admitted.
 
 (** Por fim, a correção do algoritmo [bs] é obtida pelo teorema a seguir que estabelece que o algoritmo [bs] retorna uma permutação da lista de entrada que está ordenada: *)
     
 Theorem bs_correto: forall l, Sorted le (bs l) /\ Permutation l (bs l).
 Proof.
 Admitted.
+
+*)
 
 (* end hide *)
 
