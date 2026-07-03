@@ -20,8 +20,8 @@ Function bubble (l: list nat ) {measure length l} :=
             else y::(bubble (x::l))
             end.
 Proof.
-  - intros. simpl. lia.
-  - intros. simpl. lia.
+  - auto.
+  - auto.
 Defined.
 
 (** Observe que esta função não é estruturalmente recursiva porque, por exemplo, a lista [(x::l)] não é uma sublista da lista original [(x::y::l)]. Neste caso, utilizamos [Function] para construir esta função e precisamos fornecer a medida que decresce em cada chamada recursiva, além de provar que esta medida efetivamente decresce a cada chamada recursiva. Por exemplo, [bubble (2::1::nil)] retorna a lista [(1::2::nil)].
@@ -74,19 +74,8 @@ Eval compute in (bs (3 :: 2 :: 1::nil)).
 
 (** ** Definições *)
 (** Antes de mais nada, podemos trazer algumas definições que nos ajudaram a provar que uma lista foi ordenada após ela ter passado pelo algoritmo de borbulhamento [bs]*)
-(** H.I. 1: O predicado [Sorted] será nossa primeira hipotese de indução que definiremos para ajudar a provar o nosso algoritmo. *)
 
-Inductive Sorted : list nat -> Prop :=
-  | sorted_nil : Sorted nil
-  | sorted_single : forall x:nat, Sorted (x::nil)
-  | sorted_cons : forall (x y: nat) (l: list nat), x <= y -> Sorted (y::l) -> Sorted (x::y::l).
-
-(** Esse primeiro predicado prova que o algoritmo ordenou corretamente para:
-  - Uma lista vazia;
-  - Uma lista com um único elemento; 
-  - Uma lista com múltiplos elementos em ordem crescente; *)
-
-(** H.I. 2: O predicado [Permutation] será nossa segunda hipotese de indução que definiremos para ajudar a provar o nosso algoritmo. *)
+(** H.I. 1: O predicado [Permutation] será nossa segunda hipotese de indução que definiremos para ajudar a provar o nosso algoritmo. *)
 
 Inductive Perm : list nat -> list nat -> Prop :=
   | perm_refl : forall l, Perm l l
@@ -155,7 +144,7 @@ Proof.
 Qed.
 
 (** Para realizar essa prova, estabelecemos que uma lista l é estruturada por uma cabeça h e um corpo tl.
-A partir daí, provamos trivialmente que para uma função vazia, o [bs] retorna uma permutação de uma lista vazia.
+A partir daí, provamos trivialmente que para uma lista vazia, o [bs] retorna uma permutação de uma lista vazia.
 
 Em seguida, precisamos provar que a função [bs] retorna uma permutação da lista original, ou seja, Perm (bubble (h :: bs tl)) |- (h :: tl).
 
@@ -168,18 +157,62 @@ Para isso, usamos a regra [perm_trans] com a lista (h :: (bs tl)). Isso divide a
 
 (** ** Provando Ordenação *)
 (** Agora que provamos que o algoritmo bubblesort consegue retornar uma permutação da lista original,
-precisamos provar o algoritmo é capaz de ordenar a lista. *)
+precisamos provar que o algoritmo é capaz de ordenar a lista. *)
+
+(** *** Lema 3: *)
+(** Primeiro, precisamos provar que, para uma lista ordenada, a função [bubble] é capaz de mante-la ordenada. Para isso, utilizaremos o lema a seguir: *)
+
+Lemma bubble_sorted: forall l, Sorted le l -> bubble l = l.
+Proof.
+  intro l. functional induction (bubble l).
+  - simpl. reflexivity.
+  - simpl. reflexivity.
+  - simpl. intro H. inversion H; subst.
+    + rewrite IHl0.
+      * reflexivity.
+      * assumption.
+  - simpl. apply Nat.leb_gt in e0. intro hSorted.
+    + inversion hSorted; subst. inversion H2; subst. lia.
+Qed.
+
+(** Essa prova é realizada por indução sobre a função bubble, fazendo com que a demonstração seja dividida em quatro casos.
+
+- 1º - Lista vazio ([nil]):
+
+  Essa prova é trivial pois a função [bubble] retorna a lista vazia, que é igual a lista vazia.
+
+
+- 2º - Possui 1 elemento ([x :: nil]):
+
+  Também é trivial, pois se a função [bubble] receber uma lista com um único elemento, ela retorna essa mesma lista, que é equivalente a lista ordenada.
+
+
+- 3º - Possui pelo menos 2 elementos ([x :: y :: l0], [x <= y]):
+
+  Nesse caso, a lista não realizará a troca entre os dois elementos e processegue recursivamente para a sublista y :: l0, assim temos que temos que  x :: bubble (y :: l0) = x :: y :: l0.
+  Como a lista permace ordenada, tomamos por hipotese de indução bubble (y :: l0) = y :: l0. Assim, aplicando a h.i., temos que x :: y :: l0 = x :: y :: l0, que é verdade.
+  
+  Com isso, provamos que para uma lista ordenada, a função [bubble] retorna a mesma lista ordenada.
+  
+
+- 4º - Possui pelo menos 2 elementos ([x :: y :: l0], [x > y]):
+
+  Esse é um caso particular, pois a forma que o nosso lema foi estruturado torna o caso impossível de ser provado assumindo que a lista recebida por [bubble] esteja ordenada.
+  Inicialmente, tema a premisa (x <=? y) = false, ou seja, x > y. Assim, a função [bubble] retornará y :: bubble (x :: l0).
+  Entretanto, o passo indutívo consiste em provar Sorted le (x :: y :: l0) -> y :: bubble (x :: l0) = x :: y :: l0. Desta forma, utilizando a nossa premissa booleana,
+  chegamos a uma contradição, invalidando esse caso com prova para a ordenação de uma lista ordenada utilizando o algoritmo [bubble].
+*)
+
+(** *** Lema 4: *)
+
+Lemma bs_sorted: forall l, Sorted le (bs l).
+Proof. 
+  intro l. functional induction (bubble l).
+Admitted.
 
 (* begin hide *)
 
 (*
-
-Lemma bubble_sorted: forall l, Sorted le l -> bubble l = l.
-Proof. Admitted.
-
-Lemma bs_sorted: forall l, Sorted le (bs l).
-Proof. Admitted.
-
 (** A seguir, mostraremos que o algoritmo bubblesort (função [bs]) gera como saída uma permutação da lista de entrada. O lema a seguir nos diz que a função [bubble] também gera uma permutação da entrada: *)
 
 Lemma bubble_perm: forall l, Permutation l (bubble l).
