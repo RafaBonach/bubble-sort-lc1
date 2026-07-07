@@ -6,7 +6,7 @@ Require Import Permutation.
 (* end hide*)
 
 (**
-Este trabalho apresenta uma prova formal da correção do algoritmo de ordenação por borbulhamento (a função [bs] a seguir). A formalização foi feita no assistente de provas Coq. O assistente de provas Coq utiliza o sistema de Dedução Natural, o que o torna adequado para o desenvolvimento de atividades computacionais no curso de Lógica Computacional 1. O Coq permite a extração de código certificado em diversas linguagens funcionais, como Ocaml, Haskell e Scheme. *)
+Este trabalho apresenta uma prova formal da correção do algoritmo de ordenação por borbulhamento (a função [bs] a seguir). A formalização foi feita no assistente de provas Coq. O assistente de provas Coq utiliza o sistema de Dedução Natural, o que o torna adequado para o desenvolvimento de atividades computacionais no curso de Lógica Computacional 1. O Coq permite a extração de código certificado em diversas linguagens funcionais, como Ocaml, Haskell e Scheme. Nesse projeto, também será disponibilizado o arquivo haskell extraído no Coq. *)
 
 (** Iniciaremos definindo a função [bubble] que recebe uma lista de naturais como argumento, e percorre esta lista comparando elementos consecutivos. Chamamos este processo de borbulhamento: *)
 
@@ -70,14 +70,14 @@ Eval compute in (bs (3 :: 2 :: 1::nil)).
 (** Neste caso sim, a função [bs] deve ser capaz de ordenar a lista orignal. Entretando, precisamos realizar algumas provas para garantir que de fato, bs seja capaz de causar a ordenação de uma lista. *)
 
 
-(** * Métodos de prova*)
+(** * Provas da Ordenabilidade de [bs] *)
 
 (** ** Provando permutação *)
-(** Com algumas definições estabelecidas, podemos começar a provar a corretude do algoritmo de ordenação por borbulhamento [bs].*)
+(** Primeiro, como haviamos demonstrado, precisamos provar que o algoritmo é capaz de gerar uma permutação da lista original. Para isso, provaremos os lemas a seguir. *)
 
 (** *** Lema 1 *)
 
-(** O primeiro lema que precisamos provar é que a permutação é preservada pelo algoritmo de borbulhamento: *)
+(** O primeiro lema que precisamos provar é que a função [bubble] gera uma permutação da lista original: *)
 
 Lemma bubble_perm: forall l, Permutation l (bubble l).
 Proof.
@@ -90,25 +90,30 @@ Proof.
     + simpl. apply perm_skip. apply IHl0.
 Qed.
 
-(** Para provar esse lema, será necessário provar 4 casos:
+(** Para provar esse lema, será necessário provar 4 casos fundamentais:
 - 1. Permutação () = bubble ():
   
   Esse caso é provado trivialmente, dado que a permutação de uma lista vazia é própia lista vazia. O algoritmo [bubble] retorna uma lista vazia. 
 
 - 2. Permutação (x :: nil) = bubble (x :: nil): 
 
-  Esse caso é provado trivialmente, dado que a permutação de uma lista com um único elemento é própria lista. O algoritmo [bubble] retorna a lista com o único elemento.
+  Esse caso também é provado trivialmente, dado que a permutação de uma lista com um único elemento é própria lista. O algoritmo [bubble] retorna a lista com o único elemento.
 
 - 3. Permutação (x :: y :: l0) = bubble (x :: y :: l0): 
 
-  Esse caso pode ser provado utilizando uma regra de permutação [perm_skip], que diz que a permutação de uma lista com um elemento constante é equivalente a permutação da sublista. Assim, podemos aplicar a hipótese de indução [IHl0] para provar que a sublista l0 é uma permutação da lista bubble l0.
+Esse caso, como a nossa hipótese de indução é dada por Permutation (y :: l0) (bubble (y :: l0)), precisamos utilizar a regra de permutação [perm_skip], que diz que a permutação de uma lista com um elemento constante é equivalente a permutação da sublista. Assim, podemos aplicar a hipótese de indução [IHl0] para provar que a sublista l0 é uma permutação da lista bubble l0.
 
 - 4. Permutação (y :: x :: l0) = bubble (y :: x :: l0): 
 
-  Para provarmos esse caso, precisaremos utilizar a regra de permutação [perm_trans] com a lista (y :: x :: l0). Essa regra diz que se uma lista é uma permutação de outra, e essa segunda lista é uma permutação de uma terceira, então a primeira lista é uma permutação da terceira.
-  Como a lista (y :: x :: l0) é uma permutação da lista (x :: y :: l0) e a lista (x :: y :: l0) é uma permutação da lista bubble (y :: x :: l0), podemos concluir que a lista (y :: x :: l0) é uma permutação da lista bubble (y :: x :: l0).
-  Assim, para a primeira ramificação dessa prova, lista (y :: x :: l0) é uma permutação da lista (x :: y :: l0), podemos aplicar a regra de permutação [perm_swap] que diz que a permutação de uma lista com dois elementos é equivalente a permutação da lista com os elementos trocados de posição, concluindo essa ramificação.
-  Depois, provamos a segunda ramificação, lista (x :: y :: l0) é uma permutação da lista bubble (y :: x :: l0), utilizando a regra de permutação [perm_skip] e aplicando a hipótese de indução [IHl0] para provar que a sublista l0 é uma permutação da lista bubble l0.
+  Para provarmos esse caso, precisaremos utilizar a regra de permutação [perm_trans] com a lista (y :: x :: l0). Essa regra diz que se uma lista é uma permutação de outra, e essa segunda lista é uma permutação de uma terceira, então a primeira lista é uma permutação da terceira. Isso nos dá duas ramificações a serem provadas:
+
+  - Permutation (x :: y :: l0) (y :: x :: l0):
+
+    Para a primeira ramificação dessa prova, lista (y :: x :: l0) é uma permutação da lista (x :: y :: l0), podemos aplicar a regra de permutação [perm_swap] que diz que a permutação de uma lista com dois elementos é equivalente a permutação da lista com os elementos trocados de posição, concluindo essa ramificação.
+
+  - Permutation (y :: x :: l0) (y :: bubble (x :: l0)):
+
+    Depois, provamos a segunda ramificação, lista (x :: y :: l0) é uma permutação da lista bubble (y :: x :: l0), utilizando a regra de permutação [perm_skip] e aplicando a hipótese de indução [IHl0] para provar que a sublista l0 é uma permutação da lista bubble l0.
 
 Assim, concluimos a prova do lema 1, que diz que a função [bubble] retorna uma permutação da lista original.
 *)
@@ -135,10 +140,14 @@ Qed.
   Para provar esse caso, precisaremos utilizar a regra de permutação [perm_trans] com a lista (h :: (bs tl)). Essa regra diz que se uma lista é uma permutação de outra, e essa segunda lista é uma permutação de uma terceira, então a primeira lista é uma permutação da terceira.
   Com isso, teremos duas ramificações a serem provadas:
 
-  - 1º Perm (h :: tl) |- (h :: (bs tl)): Para provar essa ramificação, podemos aplicar a regra de permutação [perm_skip] que diz que a permutação de uma lista com um elemento constante é equivalente a permutação da sublista.
-  Em seguida, basta usar a hipotese de indução [IHtl], permutação da sublista tl é equivalente a permutação da lista [bs] tl.
+  - 1º Perm (h :: tl) = (h :: (bs tl)): 
 
-  - 2º Perm (h :: (bs tl)) |- [bs] (h :: tl): Para provar essa ramificação, basta utilizar o lema 1 [bubble_perm], que diz que a função [bubble] retorna uma permutação da lista original.
+    Para provar essa ramificação, podemos aplicar a regra de permutação [perm_skip] que diz que a permutação de uma lista com um elemento constante é equivalente a permutação da sublista.
+    Em seguida, basta usar a hipotese de indução [IHtl], permutação da sublista tl é equivalente a permutação da lista [bs] tl.
+
+  - 2º Perm (h :: (bs tl)) = [bs] (h :: tl):
+  
+    Para provar essa ramificação, basta utilizar o lema 1 [bubble_perm], que diz que a função [bubble] retorna uma permutação da lista original.
 
 Assim, concluimos a prova do lema 2, que diz que o algoritmo recursivo [bs] retorna uma permutação da lista original.
 *)
@@ -148,19 +157,17 @@ Assim, concluimos a prova do lema 2, que diz que o algoritmo recursivo [bs] reto
 precisamos provar que o algoritmo é capaz de ordenar a lista. *)
 
 (** *** Lema 3: *)
-(** Primeiro, precisamos provar que, para uma lista ordenada, a função [bubble] é capaz de mante-la ordenada. Para isso, utilizaremos o lema a seguir: *)
+(** Primeiro, precisamos provar que, para uma lista ordenada, a função [bubble] é capaz de mante-la ordenada, ou seja, garantir a estabilidade de [bubble]. Para isso, utilizaremos o lema a seguir: *)
 
 Lemma bubble_stability: forall l, Sorted le l -> bubble l = l.
 Proof.
   intro l. functional induction (bubble l).
   - simpl. reflexivity.
   - simpl. reflexivity.
-  - simpl. intro H. inversion H; subst.
-    + rewrite IHl0.
-      * reflexivity.
-      * assumption.
-  - simpl. apply Nat.leb_gt in e0. intro hSorted.
-    + inversion hSorted; subst. inversion H2; subst. lia.
+  - simpl. intro H. inversion H; subst. rewrite IHl0.
+    + reflexivity.
+    + assumption.
+  - simpl. apply Nat.leb_gt in e0. intro hSorted. inversion hSorted; subst. inversion H2; subst. lia.
 Qed.
 
 (** Essa prova é realizada por indução sobre a função bubble, fazendo com que a demonstração seja dividida em quatro casos.
@@ -177,7 +184,7 @@ Qed.
 
 - 3º - Possui pelo menos 2 elementos ([x :: y :: l0], [x <= y]):
 
-  Nesse caso, a lista não realizará a troca entre os dois elementos e processegue recursivamente para a sublista y :: l0, assim temos que temos que  x :: bubble (y :: l0) = x :: y :: l0.
+  Nesse caso, a lista não realizará a troca entre os dois elementos e prossegue recursivamente para a sublista y :: l0, assim temos que  x :: bubble (y :: l0) = x :: y :: l0.
   Como a lista permace ordenada, tomamos por hipotese de indução bubble (y :: l0) = y :: l0. Assim, aplicando a h.i., temos que x :: y :: l0 = x :: y :: l0, que é verdade.
   
   Com isso, provamos que para uma lista ordenada, a função [bubble] retorna a mesma lista ordenada.
@@ -209,9 +216,9 @@ Proof.
 Qed.
 
 (** O lema [bubble_one] é provado através de duas ramificações:
-- \textbf{1° - () -> [bubble] (x :: ())}:
+- 1° - () -> [bubble] (x :: ()):
 
-  Iniciamos introduzindo o primeiro termo da implicação, e então utilizamos a regra [Sorted _cons] para abrir a nossa lista ordenada em uma lista vazia, que é provada trivialmente com [Sorted_nil], e a relaçõo de um terma com o vazio, que resultantemente dá o termo. Assim provamos que para uma lista com um único termo, o teorema é válido.
+  Iniciamos introduzindo o primeiro termo da implicação, e então utilizamos a regra [Sorted _cons] para abrir a nossa lista ordenada em uma lista vazia, que é provada trivialmente com [Sorted_nil], e a relação de um terma com o vazio, que resultantemente dá o termo. Assim provamos que para uma lista com um único termo, o teorema é válido.
 
 - 2° - (h :: tl) -> [bubble] (x :: h :: tl):
 
@@ -260,9 +267,13 @@ Qed.
 
 (** Essa prova é uma prova simples por utilizar o lema anterior [bubble_one]. Para realizar essa prova, precisamos fazer indução em l. Isso nos dá 2 casos principais para provar:|
 
-- 1° - [bs] ordena uma lista vazia: É provado trivialmente utilizando a regra de ordenação [Sorted_nil], ou seja, uma lista vazia está ordenada.
+- 1° - [bs] ordena uma lista vazia: 
 
-- 2° - Ordenar 1 terma em uma lista ordenada (bubble (h :: bs tl)): Nesse caso, usamos o lema [bubble_one] para provar que o elemento maior se move para a posição correta. Isso resulta em Sorted (bs l), ou seja, o resultado de [bs] está ordenado, que é provado pela nossa Hipotese de indução [IHtl], que diz que [bs] ordena a sublista tl.
+  É provado trivialmente utilizando a regra de ordenação [Sorted_nil], ou seja, uma lista vazia está ordenada.
+
+- 2° - Ordenar 1 terma em uma lista ordenada (bubble (h :: bs tl)): 
+
+  Nesse caso, usamos o lema [bubble_one] para provar que o elemento maior se move para a posição correta. Isso resulta em Sorted (bs l), ou seja, o resultado de [bs] está ordenado, que é provado pela nossa Hipotese de indução [IHtl], que diz que [bs] ordena a sublista tl.
 
 Com isso, provamos que a nossa função [bs] ordena uma lista de naturais, ou seja, a função [bs] retorna uma lista ordenada.
 *)
@@ -279,9 +290,13 @@ Qed.
 
 (** A prova desse teorema é bem simples. Primeiro quebramos o nosso sequente em duas ramificações:
 
-- 1° - Provar que [bs] ordena a lista de entrada: Para isso, utilizamos o lema [bs_sorted], que diz que a função [bs] ordena uma lista de naturais.
+- 1° - Provar que [bs] ordena a lista de entrada: 
 
-- 2° - Provar que [bs] retorna uma permutação da lista de entrada: Para isso, utilizamos o lema [bs_perm], que diz que a função [bs] retorna uma permutação da lista original.
+  Para isso, utilizamos o lema [bs_sorted], que diz que a função [bs] ordena uma lista de naturais.
+
+- 2° - Provar que [bs] retorna uma permutação da lista de entrada: 
+
+  Para isso, utilizamos o lema [bs_perm], que diz que a função [bs] retorna uma permutação da lista original.
 
 Assim, provamos que o algoritmo [bs] retorna uma permutação da lista de entrada que está ordenada, ou seja, o algoritmo [bs] é correto.
 *)
