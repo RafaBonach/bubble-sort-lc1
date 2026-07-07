@@ -60,7 +60,7 @@ Fixpoint bs (l: list nat) :=
   match l with
   | nil => nil
   | h::l' => bubble (h::(bs l'))
-  end.           
+  end.
 (* begin hide *)
 Eval compute in (bs (1::2::nil)).
 Eval compute in (bs (2 :: 1::nil)).
@@ -72,87 +72,75 @@ Eval compute in (bs (3 :: 2 :: 1::nil)).
 
 (** * Métodos de prova*)
 
-(** ** Definições *)
-(** Antes de mais nada, podemos trazer algumas definições que nos ajudaram a provar que uma lista foi ordenada após ela ter passado pelo algoritmo de borbulhamento [bs]*)
-
-(** H.I. 1: O predicado [Permutation] será nossa segunda hipotese de indução que definiremos para ajudar a provar o nosso algoritmo. *)
-
-Inductive Perm : list nat -> list nat -> Prop :=
-  | perm_refl : forall l, Perm l l
-  | perm_trans : forall (l1 l2 l3: list nat), Perm l1 l2 -> Perm l2 l3 -> Perm l1 l3
-  | perm_const : forall (x: nat) (l1 l2: list nat), Perm l1 l2 -> Perm (x::l1) (x::l2)
-  | perm_swap : forall (x y: nat) (l: list nat), Perm (x::y::l) (y::x::l).
-
-  (** No caso dessa hipotese, ela provará que nosso algoritmo gerou uma permutação da lista original provando:
-  - [perm_refl]: Uma lista é permutação de si mesma.
-  - [perm_trans]: Se uma lista é permutação de outra, e esta é permutação de uma terceira, então a primeira é permutação da terceira.
-  - [perm_const]: Se uma lista é permutação de outra, então adicionar um elemento no início a ambas resulta em listas que são permutações uma da outra.
-  - [perm_swap]: Se dois elementos adjacentes são trocados, as listas resultantes são permutações uma da outra. *)
-
-(** Finalmente, conseguimos definir um teorema que nos permite concluir que duas listas com os mesmos elementos e mesma quantidade de elementos são permutações uma da outra: *)
-
-Theorem perm_eq: forall (l1 l2: list nat), (forall x, count_occ Nat.eq_dec l1 x = count_occ Nat.eq_dec l2 x) -> length l1 = length l2 -> Perm l1 l2.
-Proof.
-  Admitted.
-
 (** ** Provando permutação *)
 (** Com algumas definições estabelecidas, podemos começar a provar a corretude do algoritmo de ordenação por borbulhamento [bs].*)
 
-(** *** Lema 1: Permutação da lista ordenada -> Lista original*)
+(** *** Lema 1 *)
 
-(** A lista gerada pelo algoritmo de ordenação [bs] é uma permutação da lista original
-nesse primeiro lema, queremos provar que ao passar qualquer lista de n elementos naturais pelo algoritmo de ordenação, o mesmo deve retornar uma permutação da lista original: *)
+(** O primeiro lema que precisamos provar é que a permutação é preservada pelo algoritmo de borbulhamento: *)
 
-Lemma perm_bs: forall l, Perm (bubble l) l.
-Proof. 
-  intro l. functional induction (bubble l). 
-  - simpl. apply perm_refl.
-  - simpl. apply perm_refl.
-  - simpl. apply perm_const. apply IHl0.
+Lemma bubble_perm: forall l, Permutation l (bubble l).
+Proof.
+  intro l. functional induction (bubble l).
+  - simpl. apply Permutation_refl.
+  - simpl. apply Permutation_refl.
+  - simpl. apply perm_skip. apply IHl0. 
   - simpl. apply perm_trans with (y::x::l0). 
-    + apply perm_const. apply IHl0. 
     + apply perm_swap. 
+    + simpl. apply perm_skip. apply IHl0.
 Qed.
 
-(** Inicialmente, definimo a lista l e o que queremos provar. Em seguida, provamos os casos base:
-- perm nil -> nil 
-- perm (x :: nil) -> (x :: nil) 
+(** Para provar esse lema, será necessário provar 4 casos:
+- 1. Permutação () = bubble ():
+  
+  Esse caso é provado trivialmente, dado que a permutação de uma lista vazia é própia lista vazia. O algoritmo [bubble] retorna uma lista vazia. 
 
-Então, finalmente provamos a permutação perm (x :: y :: l0) -> (x :: y :: l0). Para isso, usamos a regra [perm_const] para obtermos Perm (bubble (y :: l0)) - > (y :: l0).
-Como a nossa hipose [IHl0] é equivalente ao que quremos provar, conseguimos aplica-la.
+- 2. Permutação (x :: nil) = bubble (x :: nil): 
 
-Em seguida, precisamos provar mais uma das folhas de objetivos:
-- perm (y :: bubble (x :: l0)) -> (x :: y :: l0).
+  Esse caso é provado trivialmente, dado que a permutação de uma lista com um único elemento é própria lista. O algoritmo [bubble] retorna a lista com o único elemento.
 
-Para conseguirmos provar essa ramificação utilizamos o predicado [perm_trans], que fará uma permutação entre os dois elementos em uma lista.
+- 3. Permutação (x :: y :: l0) = bubble (x :: y :: l0): 
 
-Assim, obteremos Perm (y :: bubble (x :: l0)) -> (y :: x :: l0) possibilitando que seja provado da mesma forma que a ramificação anterior, utilizando o predicado [perm_const] e a hipotese [IHl0].
+  Esse caso pode ser provado utilizando uma regra de permutação [perm_skip], que diz que a permutação de uma lista com um elemento constante é equivalente a permutação da sublista. Assim, podemos aplicar a hipótese de indução [IHl0] para provar que a sublista l0 é uma permutação da lista bubble l0.
 
-Finalmente, basta aplicar [perm_swap] no sequente Perm (y :: x :: l0) -> (x :: y :: l0) que a prova é finalizada. *)
+- 4. Permutação (y :: x :: l0) = bubble (y :: x :: l0): 
 
+  Para provarmos esse caso, precisaremos utilizar a regra de permutação [perm_trans] com a lista (y :: x :: l0). Essa regra diz que se uma lista é uma permutação de outra, e essa segunda lista é uma permutação de uma terceira, então a primeira lista é uma permutação da terceira.
+  Como a lista (y :: x :: l0) é uma permutação da lista (x :: y :: l0) e a lista (x :: y :: l0) é uma permutação da lista bubble (y :: x :: l0), podemos concluir que a lista (y :: x :: l0) é uma permutação da lista bubble (y :: x :: l0).
+  Assim, para a primeira ramificação dessa prova, lista (y :: x :: l0) é uma permutação da lista (x :: y :: l0), podemos aplicar a regra de permutação [perm_swap] que diz que a permutação de uma lista com dois elementos é equivalente a permutação da lista com os elementos trocados de posição, concluindo essa ramificação.
+  Depois, provamos a segunda ramificação, lista (x :: y :: l0) é uma permutação da lista bubble (y :: x :: l0), utilizando a regra de permutação [perm_skip] e aplicando a hipótese de indução [IHl0] para provar que a sublista l0 é uma permutação da lista bubble l0.
+
+Assim, concluimos a prova do lema 1, que diz que a função [bubble] retorna uma permutação da lista original.
+*)
 
 (** *** Lema 2: *)
 (** Agora, vamos provar que a função recursiva [bs] retorna uma permutação da lista original através do seguinte lema: *)
 
-Lemma bs_permuta: forall l, Perm (bs l) l.
+Lemma bs_perm: forall l, Permutation l (bs l).
 Proof.
   induction l as [ | h tl].
-  - simpl. apply perm_refl.
-  - simpl. apply perm_trans with (h::(bs tl)).
-    + simpl. apply perm_bs.
-    + simpl. apply perm_const. apply IHtl.
+  - simpl. apply Permutation_refl.
+  - simpl. apply perm_trans with (h::(bs tl)). 
+    + simpl. apply perm_skip. apply IHtl.
+    + simpl. apply bubble_perm.
 Qed.
 
-(** Para realizar essa prova, estabelecemos que uma lista l é estruturada por uma cabeça h e um corpo tl.
-A partir daí, provamos trivialmente que para uma lista vazia, o [bs] retorna uma permutação de uma lista vazia.
+(** Para provar esse lema, será necessário provar 2 casos:
+- 1. Permutação () = [bs] ():
+  
+  Esse caso é provado trivialmente, dado que a permutação de uma lista vazia é própia lista vazia. O algoritmo [bs] retorna uma lista vazia. 
 
-Em seguida, precisamos provar que a função [bs] retorna uma permutação da lista original, ou seja, Perm (bubble (h :: bs tl)) |- (h :: tl).
+- 2. Permutação (h :: tl) = [bs] (h :: tl): 
 
-Para isso, usamos a regra [perm_trans] com a lista (h :: (bs tl)). Isso divide a nossa prova em duas partes:
-- 1º Perm (bubble (h :: bs tl)) |- (h :: (bs tl)) que é provado pelo lema 1, ou seja, [perm_bs].
-- 2º Perm (h :: (bs tl)) |- (h :: tl): Para provar essa ramificação, precisamos:
-  - utilizar a regra [perm_const] para retira a constante h da lista, já que ela já está na posição que deveria estar;
-  - aplicamos a hipótese de indução [IHtl] provando assim que a lista tl é uma permutação da lista bs tl.
+  Para provar esse caso, precisaremos utilizar a regra de permutação [perm_trans] com a lista (h :: (bs tl)). Essa regra diz que se uma lista é uma permutação de outra, e essa segunda lista é uma permutação de uma terceira, então a primeira lista é uma permutação da terceira.
+  Com isso, teremos duas ramificações a serem provadas:
+
+  - 1º Perm (h :: tl) |- (h :: (bs tl)): Para provar essa ramificação, podemos aplicar a regra de permutação [perm_skip] que diz que a permutação de uma lista com um elemento constante é equivalente a permutação da sublista.
+  Em seguida, basta usar a hipotese de indução [IHtl], permutação da sublista tl é equivalente a permutação da lista [bs] tl.
+
+  - 2º Perm (h :: (bs tl)) |- [bs] (h :: tl): Para provar essa ramificação, basta utilizar o lema 1 [bubble_perm], que diz que a função [bubble] retorna uma permutação da lista original.
+
+Assim, concluimos a prova do lema 2, que diz que o algoritmo recursivo [bs] retorna uma permutação da lista original.
 *)
 
 (** ** Provando Ordenação *)
@@ -162,7 +150,7 @@ precisamos provar que o algoritmo é capaz de ordenar a lista. *)
 (** *** Lema 3: *)
 (** Primeiro, precisamos provar que, para uma lista ordenada, a função [bubble] é capaz de mante-la ordenada. Para isso, utilizaremos o lema a seguir: *)
 
-Lemma bubble_sorted: forall l, Sorted le l -> bubble l = l.
+Lemma bubble_stability: forall l, Sorted le l -> bubble l = l.
 Proof.
   intro l. functional induction (bubble l).
   - simpl. reflexivity.
@@ -205,28 +193,115 @@ Qed.
 
 (** *** Lema 4: *)
 
-Lemma bs_sorted: forall l, Sorted le (bs l).
-Proof. 
-  intro l. functional induction (bubble l).
-Admitted.
+(** Agora, precisamos provar uma caracteristica fundamental da função [bubble], que ela consegue fazer com que o maior elemento de uma lista torne-se o último elemento. Para isso, usaremos o lema a seguir: *)
 
-(* begin hide *)
-
-(*
-(** A seguir, mostraremos que o algoritmo bubblesort (função [bs]) gera como saída uma permutação da lista de entrada. O lema a seguir nos diz que a função [bubble] também gera uma permutação da entrada: *)
-
-Lemma bubble_perm: forall l, Permutation l (bubble l).
+Lemma bubble_one: forall x l, Sorted le l -> Sorted le (bubble (x :: l)).
 Proof.
-  intro l. functional induction (bubble l). Admitted.
+  induction l as [ | h tl].
+  - simpl. intro. apply Sorted_cons. apply Sorted_nil. apply HdRel_nil.
+  - simpl. intro H. rewrite bubble_equation. destruct (x<=?h) eqn:i.
+    + apply Nat.leb_le in i. inversion H; subst. apply Sorted_cons. rewrite bubble_stability. auto. auto. rewrite bubble_stability. auto. assumption.
+    + generalize dependent tl. intro tl. case tl.
+      * intros. apply Nat.leb_gt in i. inversion H; subst. apply Sorted_cons. rewrite bubble_stability. auto. auto. rewrite bubble_equation. apply HdRel_cons. lia. 
+      * intros. rewrite bubble_equation in *. destruct (x<=?n) eqn:u.
+        ** apply Nat.leb_gt in i. inversion H; subst. apply Sorted_cons. apply IHtl. apply H2. apply HdRel_cons. lia.
+        ** apply Nat.leb_gt in i. apply Nat.leb_gt in u. inversion H; subst. apply Sorted_cons. apply IHtl. apply H2. apply HdRel_cons. inversion H3. subst. assumption.
+Qed.
 
+(** O lema [bubble_one] é provado através de duas ramificações:
+- \textbf{1° - () -> [bubble] (x :: ())}:
 
+  Iniciamos introduzindo o primeiro termo da implicação, e então utilizamos a regra [Sorted _cons] para abrir a nossa lista ordenada em uma lista vazia, que é provada trivialmente com [Sorted_nil], e a relaçõo de um terma com o vazio, que resultantemente dá o termo. Assim provamos que para uma lista com um único termo, o teorema é válido.
+
+- 2° - (h :: tl) -> [bubble] (x :: h :: tl):
+
+  Iniciamos da mesma forma que o ramo anterior. Entretando, para que esse lado funcione, é necessário abrir a função [bubble] para dividir em duas novas ramificações. Essa abertura é necessária para tirarmos do [bubble] o primeiro elemento da lista. Isso divide a nossa arvore de provas em duas ramificações:
+
+  - Sorted le (x :: bubble (h :: tl)), para (x <= h):
+
+    Nessa ramificação, conseguimos utilizar a hipotese que h < tl que é resultante da hipotese que tl está ordenado para abrimos mais uma vezes a nossa premissa em Sorted le (bubble (h :: tl)) e x < (bubble (h :: tl)). Assim, utilizamos a nossa o lema [bubble_stability] para provar que bubble (h :: tl) = h :: tl, e então conseguimos provar que Sorted le (h :: tl).
+    
+    Em seguida, utilizamos novamente a regra [bubble_stability] para termos as das ramificações, x < (h :: tl), que é provado trivialmente pelas hipoteses; Sorted le (h :: tl), que também é provado trivialmente.
+
+  - Sorted le (h :: bubble (x :: tl)), para (x > h):
+  
+    Para essa ramificação, precisaremos estruturar uma prova para a calda da lista [tl]. Para isso, generalizamos a nossa prova para todos os tipos de calda de lista e provamos para cada tipo de calda:
+
+      - Caso a calda seja vazia (tl = nil):
+
+        Nesse caso, precisamos provar que (h :: bubble (x :: nil)) está ordenado. Para isso, utilizamos a regra [Sorted_cons] para abrirmos a nossa lista ordenada e provamos que bubble (x :: nil) = x :: nil. Em seguida, usamos a função [bubble] que nos retorna h<=x, gerando assim uma contradição nessa ramificação, uma vez que temos como premissa h<x.
+
+      - Caso a calda não seja vazia (tl = l):
+
+        Nesse caso, teremos de entrar mais uma vez na função [bubble], criando outras duas ramificações:
+          
+          - (h :: x :: bubble (n :: l)), para (x <= n):
+
+            Nessa ramificação, utilizamos a regra [Sorted_cons] para tirarmos [h] da lista, já que ele já está ordenado e então usamos a hipotese de indução para provar que (x :: bubble (n :: l)) está ordenado. Em seguida, provamos que o elemento h <= (x :: bubble (n :: l)), que gera uma contradição com a premissa que h < x.
+
+          - (h :: n :: bubble (x :: l)), para (x > n):
+
+            Nessa ramificação, repetimos os mesmo passos da ramificação anterior, com a diferença que agora de fato h <= (n :: bubble (x :: l)), condizendo com a nossa premissa h <= n.
+
+Desta forma, provamos que a função [bubble] consegue fazer com que o maior elemento de uma lista torne-se o último elemento.
+
+*)
+
+(** *** Lema 5: *)
+
+(** Por fim, provamos que o algoritmo [bs] ordena uma lista com o lema a seguir: *)
+
+Lemma bs_sorted: forall l, Sorted le (bs l).
+Proof.
+  induction l as [ | h tl].
+  - simpl. apply Sorted_nil.
+  - simpl. apply bubble_one. apply IHtl.
+Qed.
+
+(** Essa prova é uma prova simples por utilizar o lema anterior [bubble_one]. Para realizar essa prova, precisamos fazer indução em l. Isso nos dá 2 casos principais para provar:|
+
+- 1° - [bs] ordena uma lista vazia: É provado trivialmente utilizando a regra de ordenação [Sorted_nil], ou seja, uma lista vazia está ordenada.
+
+- 2° - Ordenar 1 terma em uma lista ordenada (bubble (h :: bs tl)): Nesse caso, usamos o lema [bubble_one] para provar que o elemento maior se move para a posição correta. Isso resulta em Sorted (bs l), ou seja, o resultado de [bs] está ordenado, que é provado pela nossa Hipotese de indução [IHtl], que diz que [bs] ordena a sublista tl.
+
+Com isso, provamos que a nossa função [bs] ordena uma lista de naturais, ou seja, a função [bs] retorna uma lista ordenada.
+*)
+
+(** ** Teorema Final *)
 (** Por fim, a correção do algoritmo [bs] é obtida pelo teorema a seguir que estabelece que o algoritmo [bs] retorna uma permutação da lista de entrada que está ordenada: *)
     
 Theorem bs_correto: forall l, Sorted le (bs l) /\ Permutation l (bs l).
 Proof.
-Admitted.
+  intro. split.
+  - apply bs_sorted.
+  - apply bs_perm.
+Qed.
 
+(** A prova desse teorema é bem simples. Primeiro quebramos o nosso sequente em duas ramificações:
+
+- 1° - Provar que [bs] ordena a lista de entrada: Para isso, utilizamos o lema [bs_sorted], que diz que a função [bs] ordena uma lista de naturais.
+
+- 2° - Provar que [bs] retorna uma permutação da lista de entrada: Para isso, utilizamos o lema [bs_perm], que diz que a função [bs] retorna uma permutação da lista original.
+
+Assim, provamos que o algoritmo [bs] retorna uma permutação da lista de entrada que está ordenada, ou seja, o algoritmo [bs] é correto.
 *)
+
+
+(* begin hide *)
+
+(** ** Extração de código *)
+
+
+Require Extraction.
+
+(** As opções de linguagens são: Ocaml, Haskell e Scheme. *)
+Extraction Language Haskell.
+
+(** Extração apenas da função [bs]. *) Extraction bs.
+
+(** Extração do programa inteiro. *) Recursive Extraction bs.
+
+(** Extração para um arquivo. *) Extraction "bubblesort" bs.
 
 (* end hide *)
 
