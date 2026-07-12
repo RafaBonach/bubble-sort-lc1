@@ -6,6 +6,16 @@ Require Import Permutation.
 (* end hide *)
 
 (**
+* Introdução e objetivo
+
+Este trabalho formaliza a correção do Bubble Sort para listas de números naturais em Rocq/Coq. O algoritmo fazia parte das propostas do projeto e era adequado para estudar correção formal, especialmente porque permite separar a prova em duas propriedades: o resultado deve estar ordenado e deve ser uma permutação da lista original.
+
+O arquivo [src/bubble_sort.v] contém as funções, os lemas e o teorema final. O relatório em PDF é gerado a partir dos comentários deste arquivo usando [coqdoc], e o arquivo [bubblesort.hs] é produzido pela extração para Haskell.
+
+* Estratégia geral da prova
+
+A correção foi dividida em preservação dos elementos e ordenação. Para a preservação dos elementos usamos [Permutation]. Para a ordenação usamos [Sorted le], ou seja, listas ordenadas pela relação menor ou igual. No final, o teorema [bs_correto] junta essas duas partes.
+
 * Funcionamento de [bubble] e [bs]
 
 A função [bubble] recebe uma lista de naturais e realiza uma única passagem de borbulhamento. Ela compara elementos consecutivos: se [x <=? y], mantém [x] antes de [y]; caso contrário, troca os dois elementos e continua a passagem.
@@ -247,6 +257,23 @@ Usamos [split] para separar as duas partes. A primeira é resolvida por
 [bs] retorna uma lista ordenada por [le] e com os mesmos elementos da lista
 original. *)
 
+(** * Extração para Haskell
+
+O mecanismo de extração de Rocq/Coq gera o arquivo [bubblesort.hs] a partir da função formalizada. As provas são apagadas durante a extração, pois servem para a verificação dentro do assistente de provas. Assim, o arquivo Haskell resultante corresponde ao conteúdo computacional da função [bs], mas não substitui a prova feita em Rocq/Coq.
+
+* Decisões e referências
+
+O desenvolvimento usa [Sorted le] e [Permutation] da biblioteca padrão, além de [Function] com a medida [length] para definir [bubble]. Essa escolha foi necessária porque [bubble] é recursiva, mas não estruturalmente recursiva no formato direto de [Fixpoint]. O projeto partiu do enunciado e do repositório-base fornecidos pelo professor.
+
+Ferramentas de IA foram utilizadas apenas como apoio na revisão da documentação; o grupo revisou o texto em relação às provas do arquivo.
+
+* Conclusão
+
+A formalização mostra que [bs] retorna uma lista ordenada por [le] e com os mesmos elementos da entrada. Os lemas auxiliares deixam a prova mais clara: primeiro mostramos que [bubble] e [bs] preservam os elementos; depois usamos [bubble_one] para provar que inserir uma cabeça em uma cauda ordenada e aplicar [bubble] produz novamente uma lista ordenada; por fim, juntamos essas propriedades no teorema [bs_correto].
+
+Repositório: %\url{https://github.com/RafaBonach/bubble-sort-lc1.git}%
+*)
+
 
 (* begin hide *)
 
@@ -265,5 +292,3 @@ Extraction Language Haskell.
 (** Extração para um arquivo. *) Extraction "bubblesort" bs.
 
 (* end hide *)
-
-(** Repositório: %\url{https://github.com/RafaBonach/bubble-sort-lc1.git}% *)
