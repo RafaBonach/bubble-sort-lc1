@@ -19,15 +19,8 @@ A correção foi dividida em preservação dos elementos e ordenação. Para a p
 * Funcionamento de [bubble] e [bs]
 
 A função [bubble] recebe uma lista de naturais e realiza uma única passagem de borbulhamento. Ela compara elementos consecutivos: se [x <=? y], mantém [x] antes de [y]; caso contrário, troca os dois elementos e continua a passagem.
-
-Essa função é recursiva, mas não é estruturalmente recursiva no formato aceito diretamente por [Fixpoint]. No ramo em que ocorre troca, a chamada recursiva é feita sobre [x :: l], que não aparece como subtermo direto de [x :: y :: l]. Por isso, a formalização usa [Function] com a medida [length l] para justificar a terminação.
-
-Uma aplicação de [bubble] não ordena necessariamente uma lista arbitrária. Por exemplo, [bubble (3 :: 2 :: 1 :: nil)] produz [2 :: 1 :: 3 :: nil]: os elementos são preservados e um elemento maior anda para a direita, mas a lista ainda não está ordenada.
-
-A função principal [bs] ordena a cauda recursivamente e depois aplica [bubble] à lista formada pela cabeça original e pela cauda já processada. A prova de ordenação usa essa ideia: inserir um elemento no início de uma lista ordenada e aplicar uma passagem de [bubble] devolve uma lista ordenada.
 *)
 
-(* begin hide *)
 Function bubble (l: list nat ) {measure length l} :=
   match l with
   | nil => nil
@@ -37,6 +30,8 @@ Function bubble (l: list nat ) {measure length l} :=
       then x::(bubble (y::l))
             else y::(bubble (x::l))
             end.
+
+(* begin hide *)
 Proof.
   - auto.
   - auto.
@@ -45,15 +40,28 @@ Defined.
 Eval compute in bubble (2::1::nil).
 Eval compute in bubble (3::2::1::nil).
 
+(* end hide *)
+
+(**
+Essa função é recursiva, mas não é estruturalmente recursiva no formato aceito diretamente por [Fixpoint]. No ramo em que ocorre troca, a chamada recursiva é feita sobre [x :: l], que não aparece como subtermo direto de [x :: y :: l]. Por isso, a formalização usa [Function] com a medida [length l] para justificar a terminação.
+
+Uma aplicação de [bubble] não ordena necessariamente uma lista arbitrária. Por exemplo, [bubble (3 :: 2 :: 1 :: nil)] produz [2 :: 1 :: 3 :: nil]: os elementos são preservados e um elemento maior anda para a direita, mas a lista ainda não está ordenada.
+
+A função principal [bs] abaixo ordena a cauda recursivamente e depois aplica [bubble] à lista formada pela cabeça original e pela cauda já processada. A prova de ordenação usa essa ideia: inserir um elemento no início de uma lista ordenada e aplicar uma passagem de [bubble] devolve uma lista ordenada.
+*)
+
 Fixpoint bs (l: list nat) :=
   match l with
   | nil => nil
   | h::l' => bubble (h::(bs l'))
   end.
+
+(* begin hide *)
 Eval compute in (bs (1::2::nil)).
 Eval compute in (bs (2 :: 1::nil)).
 Eval compute in (bs (3 :: 2 :: 1::nil)).
 (* end hide *)
+
 
 (** * Prova de preservação dos elementos/permutação *)
 
